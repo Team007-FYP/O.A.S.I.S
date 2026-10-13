@@ -14,4 +14,4 @@ outputs/contexts/*.txt
 outputs/ocr/*.md
 outputs/transcripts/*.txt
 outputs/evaluations/*.json
-outputs/gen_summaries/*.md
+outputs/gen_summaries/*.mdrun.txt
