@@ -1,0 +1,65 @@
+========================================
+OASIS PIPELINE - MASTER SETUP {New Instance}
+========================================
+
+--------------------------------------------------------
+Step 0 - Agree to Terms & Navigate
+--------------------------------------------------------
+conda tos accept
+cd /home/OASIS
+
+--------------------------------------------------------
+Step 1 - Create & Activate Conda Env (Python 3.11)
+--------------------------------------------------------
+conda create -p ./Cenv python=3.11 -y
+source /root/miniconda3/etc/profile.d/conda.sh
+conda activate ./Cenv
+
+--------------------------------------------------------
+Step 2 - Install System Dependencies (Audio & PDF)
+--------------------------------------------------------
+apt-get update && apt-get install -y poppler-utils ffmpeg
+
+--------------------------------------------------------
+Step 3 - Install UV & Base Requirements
+--------------------------------------------------------
+pip install --upgrade pip setuptools wheel
+pip install uv
+uv pip install -r requirements.txt
+
+--------------------------------------------------------
+Step 4 - Lock CUDA 12.4 PyTorch
+--------------------------------------------------------
+uv pip install torch==2.5.1+cu124 torchvision==0.20.1+cu124 torchaudio==2.5.1+cu124 --index-url https://download.pytorch.org/whl/cu124 --reinstall
+
+--------------------------------------------------------
+Step 5 - Install FlashAttention & Patch Triton Bug
+--------------------------------------------------------
+wget https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3.post1/flash_attn-2.8.3.post1+cu12torch2.5cxx11abiFALSE-cp311-cp311-linux_x86_64.whl -P /tmp/
+uv pip install /tmp/flash_attn-2.8.3.post1+cu12torch2.5cxx11abiFALSE-cp311-cp311-linux_x86_64.whl
+
+# Auto-patch the PyTorch 2.6 Triton wrapper bug for PyTorch 2.5 compatibility
+sed -i 's/torch\.library\.wrap_triton(\([a-zA-Z0-9_]*\))/\1/g' /home/OASIS/Cenv/lib/python3.11/site-packages/flash_attn/ops/triton/*.py
+
+--------------------------------------------------------
+Step 6 - Set Persistent HuggingFace Cache
+--------------------------------------------------------
+export HF_HOME=/home/.cache/huggingface
+echo 'export HF_HOME=/home/.cache/huggingface' >> ~/.bashrc
+
+===============================================
+INSTANCE CHANGED / RESUMED AFTER PAUSING
+===============================================
+
+apt-get update && apt-get install -y poppler-utils ffmpeg
+
+cd /home/OASIS
+source /root/miniconda3/etc/profile.d/conda.sh
+conda activate ./Cenv
+
+===============================================
+Live Feed of NVIDIA PCIE A100 40GB
+===============================================
+
+python3 -m pip install --upgrade --break-system-packages nvitop
+ln -s $(which nvitop) /usr/local/bin/nvitop 2>/dev/null || true
