@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*venv/
+Cenv/
+
+# Secrets
+.env
+
+# Datasets and heavy outputs
+dataset/Audios/*.wav
+dataset/Slides/*.pdf
+outputs/contexts/*.txt
+outputs/ocr/*.md
+outputs/transcripts/*.txt
+outputs/evaluations/*.json
+outputs/gen_summaries/*.md
