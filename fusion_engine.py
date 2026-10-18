@@ -82,8 +82,6 @@ def fuse_context(
     # =========================================================================
 
     fused_text: str = (
-        f"=== SYSTEM FUSION PROMPT ===\n"
-        f"{Prompts.CONTEXT_FUSION_PROMPT}\n\n"
         f"=== SLIDES & DOCUMENTATION (PDF OCR) ===\n"
         f"{ocr_text}\n\n"
         f"=== SPOKEN AUDIO TRANSCRIPT ===\n"
