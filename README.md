@@ -21,25 +21,25 @@ The pipeline runs completely autonomously, dynamically discovering datasets and 
 ```mermaid
 flowchart TD
     subgraph Inputs
-        Audio[dataset/Audios/A{N}.wav]
-        Slides[dataset/Slides/P{N}.pdf]
+        Audio["dataset/Audios/A{N}.wav"]
+        Slides["dataset/Slides/P{N}.pdf"]
     end
 
     Audio --> S1
     Slides --> S2
 
-    S1[Stage 1: Audio Engine<br><i>WhisperX Diarization</i>] -->|T{N}.txt| S3
-    S2[Stage 2: PDF Engine<br><i>Moondream2 VLM OCR</i>] -->|P{N}.md| S3
+    S1["Stage 1: Audio Engine<br><i>WhisperX Diarization</i>"] -->|"T{N}.txt"| S3
+    S2["Stage 2: PDF Engine<br><i>Moondream2 VLM OCR</i>"] -->|"P{N}.md"| S3
 
-    S3[Stage 3: Fusion Engine<br><i>CPU Context Fusion</i>] -->|C{N}.txt| S4
+    S3["Stage 3: Fusion Engine<br><i>CPU Context Fusion</i>"] -->|"C{N}.txt"| S4
 
-    S4[Stage 4: LLM Engine<br><i>GLM-4, Llama 3.1, Mistral, Qwen</i>] -->|JSON Evaluations & Summaries| S5
+    S4["Stage 4: LLM Engine<br><i>GLM-4, Llama 3.1, Mistral, Qwen</i>"] -->|"JSON Evaluations & Summaries"| S5
 
-    S5[Stage 5: Evaluator<br><i>4-Phase Automated Grading</i>] -->|Updated JSONs| S6
+    S5["Stage 5: Evaluator<br><i>4-Phase Automated Grading</i>"] -->|"Updated JSONs"| S6
 
-    S6[Stage 6: Telemetry<br><i>Dashboard Generator</i>] -->|master_report.html| Final
+    S6["Stage 6: Telemetry<br><i>Dashboard Generator</i>"] -->|"master_report.html"| Final
 
-    Final((Interactive HTML<br>Dashboard))
+    Final(("Interactive HTML<br>Dashboard"))
 ```
 
 ## 📁 Directory Structure
@@ -94,4 +94,4 @@ The project dynamically generates its required directories, organizing raw input
    python main.py
    ```
 
-Once complete, open `master_report.html` in any modern web browser to view the interactive benchmarking dashboard.
+Once complete, open `master_report.md` to view the benchmarked metrics.
