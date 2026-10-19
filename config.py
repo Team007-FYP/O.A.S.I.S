@@ -139,17 +139,6 @@ INFERENCE_CONFIG: InferenceConfig = InferenceConfig()
 
 @dataclass(frozen=True)
 class Prompts:
-    # Prompt for Stage 2 — Context Fusion.
-    # The model acts as a fusion engine that merges:
-    #   - T1.txt  (audio transcript from Whisper)
-    #   - P1.md   (slide text from olmOCR-2)
-    # into a single, chronologically-ordered context document (C1.txt).
-    CONTEXT_FUSION_PROMPT: str = (
-        "You are an AI fusion engine. "
-        "Merge this spoken transcript and these OCR slides into a clean, "
-        "chronological meeting context document."
-    )
-
     # Prompt for Stage 3 — Multimodal Summarisation.
     # The model reads C1.txt (the fused context) and produces a structured summary.
     # "Based strictly on the provided context" discourages hallucination from
