@@ -15,3 +15,9 @@ outputs/ocr/*.md
 outputs/transcripts/*.txt
 outputs/evaluations/*.json
 outputs/gen_summaries/*.mdrun.txt
+
+# Bash files
+.bash_history
+.bashrc
+run.txt
+settings.json
