@@ -7,7 +7,8 @@
 import os                          # Used for path utilities and env variables
 import torch                       # Used for specifying compute dtype
 from dataclasses import dataclass  # Used to create structured, typed config classes
-
+from dotenv import load_dotenv
+load_dotenv()
 
 # -----------------------------------------------------------------------------
 # 1. PATHS CONFIGURATION
@@ -153,9 +154,37 @@ class Prompts:
 # Singleton instance
 PROMPTS: Prompts = Prompts()
 
+# -----------------------------------------------------------------------------
+# 5. SENTRY OBSERVABILITY & BENCHMARK TELEMETRY
+# Configures Sentry Releases, Performance Tracing, and Metric Aggregation.
+# Opt-in design: If SENTRY_DSN is empty, the pipeline runs 100% offline.
+# -----------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class SentryConfig:
+    # Sentry DSN: set here or pass via the SENTRY_DSN environment variable
+    DSN: str = os.getenv("SENTRY_DSN", "")
+    
+    # Sentry Release: groups this entire 30-meeting benchmark cycle
+    RELEASE: str = "oasis@ami-30-meetings"
+    
+    # Environment tag
+    ENVIRONMENT: str = "research-benchmarking"
+    
+    # Trace 100% of meeting pipeline transactions for performance profiling
+    TRACES_SAMPLE_RATE: float = 1.0
+    
+    @property
+    def is_enabled(self) -> bool:
+        """Returns True only if a valid DSN is provided."""
+        return bool(self.DSN and self.DSN.strip())
+
+
+# Singleton instance
+SENTRY_CONFIG: SentryConfig = SentryConfig()
 
 # -----------------------------------------------------------------------------
-# 5. RUNTIME SANITY CHECKS
+# 6. RUNTIME SANITY CHECKS
 # Executed once on import to surface misconfiguration early, before any model
 # is loaded or GPU memory is allocated.
 # -----------------------------------------------------------------------------
