@@ -33,7 +33,7 @@ from pdf_engine import process_pdf                     # Part 2 — VLM OCR (olm
 from fusion_engine import fuse_context                  # Part 3 — context assembly
 from llm_engine import run_llm_summarization            # Part 4 — 4× LLM summarisation
 from evaluator import evaluate_summaries                # Part 5 — ROUGE / BERTScore / Judge
-from telemetry import ReportGenerator                   # Part 6 — Markdown master report
+from telemetry import ReportGenerator, SENTRY_TRACKER                   # Part 6 — Markdown master report
 
 
 # =============================================================================
@@ -267,6 +267,9 @@ if __name__ == "__main__":
     print("  40GB A100 | WhisperX + olmOCR-2 + 4× LLM + Llama Judge")
     print("=" * 70 + "\n")
 
+    # Initialize Sentry Telemetry (Opt-in: runs offline if no DSN is provided)
+    SENTRY_TRACKER.init()
+
     # ------------------------------------------------------------------
     # STEP 0 — Bootstrap all output directories (and dataset sub-dirs)
     # ------------------------------------------------------------------
@@ -297,7 +300,9 @@ if __name__ == "__main__":
     for N, wav_path, pdf_path, summary_path in meeting_files:
 
         try:
-            _run_pipeline_for_index(N, wav_path, pdf_path, summary_path)
+            # Wrap the meeting in a Sentry Performance transaction
+            with SENTRY_TRACKER.track_meeting(meeting_id=N):
+                _run_pipeline_for_index(N, wav_path, pdf_path, summary_path)
             successful.append(N)
 
         except Exception as exc:
@@ -306,6 +311,10 @@ if __name__ == "__main__":
                 f"{type(exc).__name__}: {exc}"
             )
             traceback.print_exc()
+             
+            # Report failure to Sentry with full traceback
+            SENTRY_TRACKER.capture_exception(exc)
+
             print(f"[main] Continuing to next index …\n")
             failed.append(N)
 

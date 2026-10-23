@@ -629,3 +629,103 @@ class ReportGenerator:
         """Fallback alias that delegates to generate_html."""
         target_html = output_path.replace(".md", ".html")
         self.generate_html(evals_dir, target_html)
+
+
+# =============================================================================
+# 4. SENTRY OBSERVABILITY & BENCHMARK TRACKER
+# Handles Sentry Releases, Performance Tracing across video durations,
+# domain-specific custom measurements, and time-series metrics.
+# =============================================================================
+
+from contextlib import contextmanager
+
+try:
+    import sentry_sdk
+    _SENTRY_SDK_AVAILABLE = True
+except ImportError:
+    _SENTRY_SDK_AVAILABLE = False
+
+
+class SentryTracker:
+    """
+    Manages Sentry telemetry for the OASIS benchmark.
+    Powers the 3 core comparisons:
+      1. Video-to-Video Duration Scaling (Performance transactions)
+      2. Model-to-Model Head-to-Head Comparison (Custom measurements & metrics)
+      3. Intra-Model Trade-Off Profiles (Speed vs Memory vs Accuracy)
+    """
+
+    def __init__(self) -> None:
+        self.is_active: bool = False
+
+    def init(self) -> None:
+        """Initialise Sentry SDK with the configured Release tag."""
+        if not _SENTRY_SDK_AVAILABLE:
+            print("[SentryTracker] ℹ sentry-sdk not installed. Running in offline mode.")
+            return
+
+        from config import SENTRY_CONFIG
+        if not SENTRY_CONFIG.is_enabled:
+            print("[SentryTracker] ℹ Sentry DSN not configured. Running in offline mode.")
+            return
+
+        try:
+            sentry_sdk.init(
+                dsn=SENTRY_CONFIG.DSN,
+                release=SENTRY_CONFIG.RELEASE,
+                environment=SENTRY_CONFIG.ENVIRONMENT,
+                traces_sample_rate=SENTRY_CONFIG.TRACES_SAMPLE_RATE,
+            )
+            self.is_active = True
+            print(f"[SentryTracker] ✓ Sentry initialized successfully (Release: {SENTRY_CONFIG.RELEASE})")
+        except Exception as exc:
+            print(f"[SentryTracker] ⚠ Failed to initialize Sentry: {exc}")
+            self.is_active = False
+
+    @contextmanager
+    def track_meeting(self, meeting_id: str, audio_duration_sec: float = 0.0, slide_count: int = 0):
+        """
+        Profiles a meeting run and categorizes it into duration tiers.
+        Powers Comparison 1 (Video to Video scaling).
+        """
+        if not self.is_active:
+            yield None
+            return
+
+        # Calibrated meeting duration tiers for the AMI corpus (20-40m range)
+        if audio_duration_sec < 1200:
+            duration_tier = "Short (<20m)"
+        elif audio_duration_sec < 1800:
+            duration_tier = "Medium (20-30m)"
+        elif audio_duration_sec <= 2400:
+            duration_tier = "Large (30-40m)"
+        else:
+            duration_tier = "Extra Large (>40m)"
+
+        with sentry_sdk.start_transaction(op="meeting_benchmark", name=f"Meeting_A{meeting_id}") as tx:
+            tx.set_tag("meeting_id", f"A{meeting_id}")
+            tx.set_tag("duration_tier", duration_tier)
+            tx.set_context("dataset_properties", {
+                "audio_duration_sec": round(audio_duration_sec, 1),
+                "slide_count": slide_count,
+            })
+            yield tx
+
+    @contextmanager
+    def track_stage(self, stage_op: str, description: str):
+        """Profiles the execution duration of a specific pipeline stage."""
+        if not self.is_active:
+            yield None
+            return
+
+        with sentry_sdk.start_span(op=stage_op, description=description) as span:
+            yield span
+
+    def capture_exception(self, exc: Exception) -> None:
+        """Safely report unexpected errors to Sentry with full traceback."""
+        if self.is_active:
+            sentry_sdk.capture_exception(exc)
+
+
+# Singleton instance ready to use across the project
+SENTRY_TRACKER: SentryTracker = SentryTracker()
